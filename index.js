@@ -19,25 +19,27 @@ const connectDB = require("./db/connect");
 //  routers
 const authRouter = require("./routes/authRoutes");
 const userRouter = require("./routes/userRoutes");
+const foodRoutes = require("./routes/foodRoutes");
 
 // middleware
 const notFoundMiddleware = require("./middleware/not-found");
 const errorHandlerMiddleware = require("./middleware/error-handler");
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
-
+const limiter = rateLimiter({
+  windowMs: process.env.RATE_LIMIT_WINDOW_MS
+    ? parseInt(process.env.RATE_LIMIT_WINDOW_MS)
+    : 60 * 1000,
+  max: process.env.RATE_LIMIT_MAX ? parseInt(process.env.RATE_LIMIT_MAX) : 15,
+  message: "Too many requests from this IP, please try again later.",
+});
 app.set("trust proxy", 1);
-app.use(
-  rateLimiter({
-    windowMs: 15 * 60 * 1000,
-    max: 60,
-  })
-);
+app.use(limiter);
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(xss());
@@ -47,6 +49,7 @@ app.use(cookieParser(process.env.JWT_SECRET));
 
 app.use("/auth", authRouter);
 app.use("/user", userRouter);
+app.use("/food", foodRoutes);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

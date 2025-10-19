@@ -2,8 +2,8 @@ const User = require("../models/User");
 const Token = require("../models/Token");
 const { StatusCodes } = require("http-status-codes");
 const CustomError = require("../errors");
-const { attachCookiesToResponse, createTokenUser } = require("../utils");
 const crypto = require("crypto");
+const createUserSession = require("../utils/createUserSession");
 
 const register = async (req, res) => {
   const { email, name, password } = req.body;
@@ -21,8 +21,11 @@ const register = async (req, res) => {
 
   await user.save();
 
+  const tokenUser = await createUserSession({ user, req, res });
+
   res.status(StatusCodes.CREATED).json({
-    msg: "Success! New User account created.",
+    msg: "Account created and logged in successfully",
+    user: tokenUser,
   });
 };
 
@@ -35,7 +38,7 @@ const login = async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    throw new CustomError.UnauthenticatedError("Invalid Credentials");
+    throw new CustomError.UnauthenticatedError("User not found.");
   }
   const isPasswordCorrect = await user.comparePassword(password);
 
@@ -43,32 +46,7 @@ const login = async (req, res) => {
     throw new CustomError.UnauthenticatedError("Invalid Credentials");
   }
 
-  const tokenUser = createTokenUser(user);
-
-  // create refresh token
-  let refreshToken = "";
-  // check for existing token
-  const existingToken = await Token.findOne({ user: user._id });
-
-  if (existingToken) {
-    const { isValid } = existingToken;
-    if (!isValid) {
-      throw new CustomError.UnauthenticatedError("Invalid Credentials");
-    }
-    refreshToken = existingToken.refreshToken;
-    attachCookiesToResponse({ res, user: tokenUser, refreshToken });
-    res.status(StatusCodes.OK).json({ user: tokenUser });
-    return;
-  }
-
-  refreshToken = crypto.randomBytes(40).toString("hex");
-  const userAgent = req.headers["user-agent"];
-  const ip = req.ip;
-  const userToken = { refreshToken, ip, userAgent, user: user._id };
-
-  await Token.create(userToken);
-
-  attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+  const tokenUser = await createUserSession({ user, req, res });
 
   res.status(StatusCodes.OK).json({ user: tokenUser });
 };
