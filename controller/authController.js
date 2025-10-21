@@ -54,14 +54,17 @@ const login = async (req, res) => {
 const logout = async (req, res) => {
   await Token.findOneAndDelete({ user: req.user.userId });
 
-  res.cookie("accessToken", "logout", {
+  const cookieOptions = {
     httpOnly: true,
-    expires: new Date(Date.now()),
-  });
-  res.cookie("refreshToken", "logout", {
-    httpOnly: true,
-    expires: new Date(Date.now()),
-  });
+    secure: process.env.NODE_ENV === "production",
+    signed: true,
+    expires: new Date(0),
+    sameSite: "none",
+  };
+
+  res.cookie("accessToken", "logout", cookieOptions);
+  res.cookie("refreshToken", "logout", cookieOptions);
+
   res.status(StatusCodes.OK).json({ msg: "user logged out!" });
 };
 
