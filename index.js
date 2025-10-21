@@ -52,7 +52,7 @@ app.use("/user", userRouter);
 app.use("/food", foodRoutes);
 
 app.use(notFoundMiddleware);
-app.use(errorHandlerMiddleware);
+// app.use(errorHandlerMiddleware);
 
 const port = process.env.PORT || 5000;
 const start = async () => {
