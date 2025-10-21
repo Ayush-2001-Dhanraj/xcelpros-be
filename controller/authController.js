@@ -80,9 +80,14 @@ const resetPassword = async (req, res) => {
   res.send("reset password");
 };
 
+const verifyAuth = async (req, res) => {
+  res.status(200).json({ success: true, user: req.user });
+};
+
 module.exports = {
   register,
   login,
   logout,
   resetPassword,
+  verifyAuth,
 };

@@ -7,6 +7,6 @@ const {
 } = require("../controller/foodController");
 
 router.route("/search").get(authenticateUser, searchDishes);
-router.route("/calories").post(authenticateUser, getCaloriesAndNutrients);
+router.route("/get-calories").post(authenticateUser, getCaloriesAndNutrients);
 
 module.exports = router;
